@@ -4,6 +4,7 @@
 
 using namespace std;
 
+int L;
 struct Boundary
 {
     int pos;
@@ -14,7 +15,7 @@ struct Boundary
 int getAmount(int num_list[], int tgt)
 {
     int count = 0;
-    for (int i = 0; num_list[i] != -2 && i < 10000; i++)
+    for (int i = 0; num_list[i] != -2 && i < 20000; i++)
     {
         if (num_list[i] == tgt)
             count++;
@@ -36,7 +37,7 @@ int canReachZero(int num_list[], int num)
 //Returns tgt and deletes it from the list; if tgt is not found returns -1
 int findAndPop(int num_list[], int tgt)
 {
-    for (int i = 0; num_list[i] != -2 && i < 10000; i++)
+    for (int i = 0; num_list[i] != -2 && i < 20000; i++)
     {
         if (num_list[i] == tgt)
         {
@@ -47,6 +48,19 @@ int findAndPop(int num_list[], int tgt)
     return -1;
 }
 
+//Places num back into the list
+void place(int num_list[], int num)
+{
+    for (int i = 0; i < 20000; i++)
+    {
+        if (num_list[i] == -1)
+        {
+            num_list[i] = num;
+            break;
+        }
+    }
+}
+
 //Sequence generator loop
 void generateLine(int num_list[], int seq[], Boundary &active_bound, int &direction)
 {
@@ -54,24 +68,39 @@ void generateLine(int num_list[], int seq[], Boundary &active_bound, int &direct
     while (true)
     {
         val = findAndPop(num_list, active_bound.val); //Try to get next digit
-        if (val == -1) //If the required digit wasn't in the list...
+        if (val == -1) //If the required digit wasn't in the list on loop 2...
         {
-            if (direction > 0 && !canReachZero(num_list, active_bound.val))
-                break; //...and it is impossible to reach zero, break loop
+            if (L && direction > 0 && !canReachZero(num_list, active_bound.val))
+            {
+                int pass = 1; //...and zero can't be reached from the current...
+                while (seq[active_bound.pos + 1] > 1) //...point, try backtrack
+                {
+                    pass = 0;
+                    active_bound.pos += 1;
+                    place(num_list, seq[active_bound.pos]);
+                    seq[active_bound.pos] = -1;
+                    if (canReachZero(num_list, active_bound.val))
+                    {
+                        pass = 1;
+                        break;
+                    }
+                }
+                active_bound.val = seq[active_bound.pos + 1] + 1;
+                if (!pass) //If even after backrtacking, no dice...
+                {
+                    L = 0; generateLine(num_list, seq, active_bound, direction);
+                    break; //...just fill as far as possible and break
+                }
+            }
+            else if (!canReachZero(num_list, active_bound.val))
+                break;
             active_bound.val -= direction; //Now try and find the previous digit
             val = findAndPop(num_list, active_bound.val);
             if (active_bound.val == 0 && val != -1) //But if it was zero...
             {
                 active_bound.val -= direction; //...try and conserve it...
                 val = findAndPop(num_list, active_bound.val); //(and find a one)
-                for (int i = 0; num_list[i] != -2; i++) //...by putting it back
-                {
-                    if (num_list[i] == -1)
-                    {
-                        num_list[i] = 0;
-                        break;
-                    }
-                }
+                place(num_list, 0); //...by putting it back
                 if (val == -1) //In case there are no more ones...
                 {
                     active_bound.val += direction; //...just get zero instead
@@ -90,7 +119,7 @@ void generateLine(int num_list[], int seq[], Boundary &active_bound, int &direct
         //Whatever digit was finally obtained, put it in the appropriate
         //position and update both the position and active digit for next time
         seq[active_bound.pos] = val; active_bound.val += direction;
-        active_bound.pos += (active_bound.pos > 6000) ? (1) : (-1);
+        active_bound.pos += (active_bound.pos > 12000) ? (1) : (-1);
     }
 }
 
@@ -102,50 +131,35 @@ int main()
         //Get all the digits and place them in a list, and fill the rest of the
         //list with -2 until the end
         int N; cin >> N;
-        int k, num_list[10000];
+        int k, num_list[20000];
         for (k = 0; k < N; k++)
             cin >> num_list[k];
-        for (k = k; k < 10000; k++)
+        for (k = k; k < 20000; k++)
             num_list[k] = -2;
 
         //Initialize the array which will hold the final sequence to -1
-        int seq[12000];
-        for (int i = 0; i < 12000; i++)
+        int seq[24000];
+        for (int i = 0; i < 24000; i++)
             seq[i] = -1;
 
         //The two boundaries are for keeping track of the active position
         //and digit over both generator loops
         int is_sol = 1, direction = 1;
-        Boundary lower = {5999, 1};
-        Boundary upper = {6001, 1};
+        Boundary lower = {11999, 1};
+        Boundary upper = {12001, 1};
 
         //First sequence element is zero in the middle of the sequence
-        seq[6000] = findAndPop(num_list, 0);
-        if (seq[6000] == -1) //If there are no zeroes, just abort
+        seq[12000] = findAndPop(num_list, 0);
+        if (seq[12000] == -1) //If there are no zeroes, just abort
         {
             cout << "No\n";
             T--;
             continue;
         }
 
-        generateLine(num_list, seq, upper, direction); //First generator loop
-
-        //After the first generator loop terminates, the second generator loop
-        //should run in the other direction. Since it is impossible that a
-        //valid sequence can require more than (n - 1) zeroes (where n is the
-        //number of ones left), just dump all the excess zeroes in the middle
-        int zero_count = getAmount(num_list, 0);
-        int one_count = getAmount(num_list, 1);
-        if (one_count == 0)
-            one_count = 1;
-        while (zero_count > one_count - 1)
-        {
-            seq[lower.pos] = findAndPop(num_list, 0);
-            lower.pos--;
-            zero_count--;
-        }
-
-        generateLine(num_list, seq, lower, direction); //Second generator loop
+        //Main generator loops
+        L = 0; generateLine(num_list, seq, upper, direction);
+        L = 1; generateLine(num_list, seq, lower, direction);
 
         //After the second generator loop terminates, if there are any digits
         //left in the list, a valid sequence must be impossible
@@ -157,6 +171,18 @@ int main()
         if (!is_sol)
         {
             cout << "No\n";
+            for (int i : seq) //Testing code
+            {
+                if (i != -1)
+                    cout << i << " ";
+            }
+            cout << "\n";
+            for (int i = 0; num_list[i] != -2; i++)
+            {
+                if (num_list[i] != -1)
+                    cout << num_list[i] << " ";
+            }
+            cout << "\n";
         }
         else
         {
@@ -171,5 +197,4 @@ int main()
 
         T--;
     }
-    return 0;
 }
