@@ -15,12 +15,24 @@ struct Boundary
 int getAmount(int num_list[], int tgt)
 {
     int count = 0;
-    for (int i = 0; num_list[i] != -2 && i < 20000; i++)
+    for (int i = 0; num_list[i] != -2; i++)
     {
         if (num_list[i] == tgt)
             count++;
     }
     return count;
+}
+
+//Returns the highest valued digit in the list
+int max(int num_list[])
+{
+    int max;
+    for (int i = 0; num_list[i] != -2; i++)
+    {
+        if (num_list[i] > max)
+            max = num_list[i];
+    }
+    return max;
 }
 
 //Returns 1 if there is at least one of every digit up to num in the list
@@ -37,7 +49,7 @@ int canReachZero(int num_list[], int num)
 //Returns tgt and deletes it from the list; if tgt is not found returns -1
 int findAndPop(int num_list[], int tgt)
 {
-    for (int i = 0; num_list[i] != -2 && i < 20000; i++)
+    for (int i = 0; num_list[i] != -2; i++)
     {
         if (num_list[i] == tgt)
         {
@@ -51,7 +63,7 @@ int findAndPop(int num_list[], int tgt)
 //Places num back into the list
 void place(int num_list[], int num)
 {
-    for (int i = 0; i < 20000; i++)
+    for (int i = 0; i < 12000; i++)
     {
         if (num_list[i] == -1)
         {
@@ -68,12 +80,13 @@ void generateLine(int num_list[], int seq[], Boundary &active_bound, int &direct
     while (true)
     {
         val = findAndPop(num_list, active_bound.val); //Try to get next digit
-        if (val == -1) //If the required digit wasn't in the list on loop 2...
+        if (val == -1) //If the required digit wasn't in the list...
         {
+            int top = 0;
             if (L && direction > 0 && !canReachZero(num_list, active_bound.val))
             {
-                int pass = 1; //...and zero can't be reached from the current...
-                while (seq[active_bound.pos + 1] > 1) //...point, try backtrack
+                int pass = 0; //...and zero can't be reached from the current...
+                while (seq[active_bound.pos + 1] > 0) //...pos, try backtracking
                 {
                     pass = 0;
                     active_bound.pos += 1;
@@ -85,8 +98,9 @@ void generateLine(int num_list[], int seq[], Boundary &active_bound, int &direct
                         break;
                     }
                 }
+                top = active_bound.val;
                 active_bound.val = seq[active_bound.pos + 1] + 1;
-                if (!pass) //If even after backrtacking, no dice...
+                if (!pass) //If even after backtracking, no dice...
                 {
                     L = 0; generateLine(num_list, seq, active_bound, direction);
                     break; //...just fill as far as possible and break
@@ -107,11 +121,14 @@ void generateLine(int num_list[], int seq[], Boundary &active_bound, int &direct
                     val = findAndPop(num_list, active_bound.val);
                 }
             }
-            else if (val == -1) //If there are no more of the previous digit...
+            //But if there are no more of the previous digit or if the highest
+            //digit cannot be reached now, get the previous to previous digit
+            else if (val == -1 || !canReachZero(num_list, top))
             {
-                active_bound.val -= direction; //...get the previous to previous
+                place(num_list, val); //And put the previous digit back
+                active_bound.val -= direction;
                 val = findAndPop(num_list, active_bound.val);
-                if (val == -1) //If there are none of those either, break loop
+                if (val == -1)
                     break;
             }
             direction *= -1; //Switch the direction of progression
@@ -131,10 +148,10 @@ int main()
         //Get all the digits and place them in a list, and fill the rest of the
         //list with -2 until the end
         int N; cin >> N;
-        int k, num_list[20000];
+        int k, num_list[12000];
         for (k = 0; k < N; k++)
             cin >> num_list[k];
-        for (k = k; k < 20000; k++)
+        for (k = k; k < 12000; k++)
             num_list[k] = -2;
 
         //Initialize the array which will hold the final sequence to -1
