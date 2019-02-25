@@ -17,9 +17,14 @@ def printStrLens():
 
 def generateMagicSeq(len):
     buffer = '{0}'.format(len)
-    next_num = randint(1, 5)
+    next_num = randint(1, len/10)
     direction = -1
     for i in range(len):
+        #if direction == 1 and len - i < next_num:
+        #    for k in range(len - i):
+        #        buffer += ' ' + str(next_num)
+        #        next_num += direction
+        #    break
         if next_num != 0 and direction == -1:
             buffer += ' ' + str(next_num)
             next_num -= 1
@@ -32,19 +37,25 @@ def generateMagicSeq(len):
         else:
             buffer += ' ' + str(next_num)
             d100 = randint(1, 100)
-            if d100 < 80:
+            if d100 < 90:
                 next_num += direction
                 continue
-            elif d100 >= 80 and d100 <= 90:
+            elif d100 >= 90 and d100 <= 95: #max rand
                 direction = -1
-            elif d100 > 90:
+            elif d100 > 95:
                 direction = -1
                 next_num += direction
     return buffer
 
 def main():
     len = int(input())
-    print(generateMagicSeq(len))
-    printStrLens()
+    if len < 1:
+        print(generateMagicSeq(len))
+    else:
+        with open('input.txt', 'a') as file:
+            file.write(generateMagicSeq(len))
+            file.write("\n\n")
+        #print("Output generated in input.txt")
+    #printStrLens()
 
 main()
