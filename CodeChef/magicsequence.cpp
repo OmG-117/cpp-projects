@@ -188,6 +188,7 @@ int main()
         if (!is_sol)
         {
             cout << "No\n";
+            /*
             for (int i : seq) //Testing code
             {
                 if (i != -1)
@@ -200,6 +201,7 @@ int main()
                     cout << num_list[i] << " ";
             }
             cout << "\n";
+            */
         }
         else
         {
